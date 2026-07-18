@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 
 import static com.javarush.jira.bugtracking.task.TaskUtil.getLatestValue;
@@ -72,5 +73,34 @@ public class ActivityService {
                 task.setTypeCode(latestType);
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public long getDurationInProgress(long taskId) {
+        return calculateDuration(taskId, "in_progress", "ready_for_review");
+    }
+
+    @Transactional(readOnly = true)
+    public long getDurationInTest(long taskId) {
+        return calculateDuration(taskId, "ready_for_review", "done");
+    }
+
+    private long calculateDuration(long taskId, String startStatus, String endStatus) {
+        List<Activity> activities = handler.getRepository().findAllByTaskIdOrderByUpdatedDesc(taskId);
+
+        java.time.LocalDateTime start = null;
+        java.time.LocalDateTime end = null;
+
+        for (int i = activities.size() - 1; i >= 0; i--) {
+            Activity a = activities.get(i);
+            if (startStatus.equals(a.getStatusCode())) {
+                start = a.getUpdated();
+            } else if (endStatus.equals(a.getStatusCode()) && start != null) {
+                end = a.getUpdated();
+                break;
+            }
+        }
+
+        return (start != null && end != null) ? Duration.between(start, end).toMinutes() : 0;
     }
 }
