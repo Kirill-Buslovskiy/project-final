@@ -23,10 +23,7 @@ import org.springframework.util.StringUtils;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -73,6 +70,8 @@ public class User extends TimestampEntry implements HasIdAndEmail, Serializable 
     @JoinColumn
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Role> roles;
+
+    private Locale locale;
 
     public User(User user) {
         this(user.id, user.email, user.password, user.firstName, user.lastName, user.displayName,

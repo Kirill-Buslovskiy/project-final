@@ -8,6 +8,9 @@ app:
     max-pool-size: 100
 
 spring:
+  messages:
+    basename: messages
+    encoding: UTF-8
   init:
     mode: never
   jpa:

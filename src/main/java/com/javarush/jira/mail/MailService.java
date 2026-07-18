@@ -19,6 +19,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.LocaleResolver;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
@@ -29,7 +30,6 @@ import java.util.concurrent.*;
 @Service
 @RequiredArgsConstructor
 public class MailService {
-    private static final Locale LOCALE_RU = Locale.forLanguageTag("ru");
     private static final String OK = "OK";
 
     private final MailCaseRepository mailCaseRepository;
@@ -42,6 +42,7 @@ public class MailService {
     //    https://stackoverflow.com/a/50287955/548473
     @Qualifier("mailExecutor")
     private final Executor mailExecutor;
+    private final LocaleResolver localeResolver;
 
     @Value("${spring.mail.username}")
     private String email;
@@ -51,19 +52,20 @@ public class MailService {
     }
 
     public String sendToUserWithParams(@NonNull String template, @NonNull User user, @NonNull Map<String, Object> params) {
+        Locale userLocale = (user.getLocale() != null) ? Locale.forLanguageTag(user.getLocale().toString()) : Locale.ENGLISH;
         String email = Objects.requireNonNull(user.getEmail());
         Map<String, Object> extParams = Util.mergeMap(params, Map.of("user", user));
-        return send(appConfig.isProd() ? email : appProperties.getTestMail(), user.getFirstName(), template, extParams);
+        return send(appConfig.isProd() ? email : appProperties.getTestMail(), user.getFirstName(), template, extParams, userLocale);
     }
 
-    public String send(String toEmail, String toName, String template, Map<String, Object> params) {
+    public String send(String toEmail, String toName, String template, Map<String, Object> params, Locale locale) {
         log.debug("Send email to {}, {} with template {}", toEmail, toName, template);
         String result = OK;
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, "UTF-8");
             message.setFrom(email, "JiraRush");
-            String content = getContent(template, params);
+            String content = getContent(template, params, locale);
             message.setText(content, true);
             message.setSubject(Util.getTitle(content));  // TODO calculate title for group emailing only once
             message.setTo(new InternetAddress(toEmail, toName, "UTF-8"));
@@ -78,8 +80,8 @@ public class MailService {
         return result;
     }
 
-    private String getContent(String template, Map<String, Object> params) {
-        Context context = new Context(LOCALE_RU, params);
+    private String getContent(String template, Map<String, Object> params, Locale locale) {
+        Context context = new Context(locale, params);
         return templateEngine.process(template, context);
     }
 
