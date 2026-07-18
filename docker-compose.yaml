@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  jira-db:
+    image: postgres:15-alpine
+    container_name: jira-db
+    environment:
+      POSTGRES_DB: jira
+      POSTGRES_USER: jira
+      POSTGRES_PASSWORD: JiraRush
+    ports:
+      - "5433:5432"
+
+  jira-app:
+    build: .
+    container_name: jira-app
+    depends_on:
+      - jira-db
+    environment:
+      DB_URL: jdbc:postgresql://jira-db:5432/jira
+      DB_USERNAME: jira
+      DB_PASSWORD: JiraRush
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      OAUTH_VK_ID: ${OAUTH_VK_ID}
+      OAUTH_VK_SECRET: ${OAUTH_VK_SECRET}
+    ports:
+      - "8080:8080"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Добавьте эту строку, чтобы Nginx имел доступ к статике:
+      - ./src/main/resources:/app/resources:ro
+    depends_on:
+      - jira-app
+    networks:
+      - jira-network
