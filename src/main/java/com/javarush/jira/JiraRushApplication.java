@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
 @EnableConfigurationProperties(AppProperties.class)
@@ -12,6 +13,7 @@ import org.springframework.cache.annotation.EnableCaching;
 public class JiraRushApplication {
 
     public static void main(String[] args) {
+        io.github.cdimascio.dotenv.Dotenv.configure().load();
         SpringApplication.run(JiraRushApplication.class, args);
     }
 }

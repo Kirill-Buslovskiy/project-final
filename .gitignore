@@ -1,5 +1,7 @@
 .idea
 out
+application-secrets.yaml
+.env
 target
 *.iml
 logs
